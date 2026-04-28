@@ -1,1 +1,349 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hỗ trợ cập nhật</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        body { background: #f4f4f4; }
+        .desktop-warning {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 9999; flex-direction: column; justify-content: center;
+            align-items: center; text-align: center; padding: 20px;
+        }
+        @media (min-width: 769px) {
+            .desktop-warning { display: flex; }
+        }
+        .container { max-width: 500px; margin: 0 auto; background: white; min-height: 100vh; }
+        .tabs { display: flex; background: #007bff; }
+        .tab {
+            flex: 1; padding: 14px; text-align: center; color: rgba(255,255,255,0.7);
+            font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .tab.active { color: white; background: #0056b3; }
+        .tab-content { display: none; padding: 20px; }
+        .tab-content.active { display: block; }
+        label { font-weight: bold; margin-top: 12px; display: block; }
+        input, select, button { width: 100%; padding: 12px; margin-top: 6px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        button { background: #28a745; color: white; border: none; margin-top: 20px; font-weight: bold; cursor: pointer; }
+        button:active { background: #1e7e34; }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
+        .error-item {
+            background: #fff; padding: 14px; margin-bottom: 10px; border-left: 4px solid #dc3545;
+            border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer;
+        }
+        .error-item:hover { background: #f8d7da; }
+        .popup {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;
+        }
+        .popup.active { display: flex; }
+        .popup-content {
+            background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px;
+            max-height: 80vh; overflow-y: auto; position: relative; text-align: center;
+        }
+        .popup-close { position: absolute; top: 8px; right: 12px; font-size: 24px; cursor: pointer; color: #999; }
+        .popup-close:hover { color: #333; }
+        .shopee-btn {
+            background: #ee4d2d; color: white; padding: 15px; text-decoration: none;
+            display: inline-block; width: 100%; border-radius: 8px; font-weight: bold;
+            font-size: 16px; margin: 15px 0; border: none; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .shopee-btn:hover { background: #d73211; transform: scale(1.02); }
+        .shopee-btn.clicked {
+            background: #28a745;
+            animation: pulse 0.5s;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .confirm-btn {
+            background: #28a745; margin-top: 10px;
+        }
+        .confirm-btn:disabled {
+            background: #cccccc;
+        }
+        .ad-popup-note {
+            background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;
+            padding: 10px; margin: 10px 0; font-size: 14px; color: #856404;
+        }
+        .success-check {
+            color: #28a745; font-size: 20px; margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop-warning">
+        <h2>📱 Vui lòng truy cập bằng điện thoại</h2>
+        <p>Trang web này chỉ dành cho thiết bị di động.</p>
+    </div>
 
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab(0)">📝 Gửi yêu cầu</div>
+            <div class="tab" onclick="switchTab(1)">🔧 Xử lý lỗi</div>
+        </div>
+
+        <!-- Tab 1: Gửi yêu cầu -->
+        <div id="tab1" class="tab-content active">
+            <h2>Gửi yêu cầu hỗ trợ</h2>
+            <form id="requestForm">
+                <label>Họ tên *</label>
+                <input type="text" id="hoTen" required>
+
+                <label>Email *</label>
+                <input type="email" id="email" required>
+
+                <label>Chọn nội dung cập nhật *</label>
+                <select id="loaiYeuCau" onchange="hienThiTheoLoai()" required>
+                    <option value="">-- Chọn --</option>
+                    <option value="Cập nhật loại hình đơn vị">Cập nhật loại hình đơn vị</option>
+                    <option value="Cập nhật loại đơn vị">Cập nhật loại đơn vị</option>
+                    <option value="Cập nhật tên đơn vị">Cập nhật tên đơn vị</option>
+                    <option value="Cập nhật email đơn vị">Cập nhật email đơn vị</option>
+                    <option value="Cập nhật mã kho bạc của user">Cập nhật mã kho bạc của user</option>
+                </select>
+
+                <!-- Trường Key động -->
+                <label id="labelKey">Mã đơn vị *</label>
+                <input type="text" id="keyInput" required>
+
+                <!-- Trường Giá trị cập nhật động -->
+                <label id="labelValue">Loại hình *</label>
+                <input type="text" id="valueInput" required>
+
+                <button type="button" onclick="moPopupShopee()">📨 Gửi yêu cầu</button>
+            </form>
+            <p id="submitStatus" style="margin-top:12px; text-align:center;"></p>
+        </div>
+
+        <!-- Tab 2: Danh sách lỗi -->
+        <div id="tab2" class="tab-content">
+            <h2>Danh sách lỗi thường gặp</h2>
+            <div id="danhSachLoi"></div>
+        </div>
+    </div>
+
+    <!-- Popup hiển thị nội dung lỗi -->
+    <div class="popup" id="popup">
+        <div class="popup-content">
+            <span class="popup-close" onclick="closePopup()">&times;</span>
+            <h3 id="popupTitle"></h3>
+            <p id="popupDesc" style="margin-top:10px; white-space: pre-wrap;"></p>
+        </div>
+    </div>
+
+    <!-- Popup Shopee đặc biệt -->
+    <div class="popup" id="shopeePopup">
+        <div class="popup-content">
+            <span class="popup-close" onclick="closeShopeePopup()">&times;</span>
+            <h3>🌟 Ủng hộ chúng tôi</h3>
+            <div class="ad-popup-note">
+                💡 Để duy trì dịch vụ miễn phí, vui lòng ghé Shopee trước khi gửi yêu cầu
+            </div>
+            
+            <p style="margin: 10px 0;">👇 Bấm nút bên dưới để mở Shopee</p>
+            
+            <button class="shopee-btn" id="shopeeBtn" onclick="moShopee()">
+                🛍 MỞ SHOPEE NGAY
+            </button>
+            
+            <p style="font-size: 12px; color: #666; margin: 5px 0;">
+                Sau khi app Shopee mở lên, quay lại đây và bấm "Xác nhận"
+            </p>
+            
+            <button class="confirm-btn" id="confirmShopeeBtn" disabled onclick="xacNhanShopee()">
+                ✅ Xác nhận đã mở Shopee
+            </button>
+            
+            <div id="shopeeStatus" style="margin-top: 10px; font-size: 13px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "YOUR_SCRIPT_URL"; // Thay bằng URL Apps Script của bạn
+        
+        // Deep link Shopee - ưu tiên mở app, nếu không có app thì mở web
+        const SHOPEE_DEEP_LINK = "shopeeph://"; // Deep link mở app Shopee
+        const SHOPEE_WEB_LINK = "https://shope.ee/your-affiliate-link"; // Fallback web nếu không có app
+
+        // Danh sách lỗi mẫu
+        const danhSachLoi = [
+            { tieuDe: "Lỗi không đăng nhập được", moTa: "Kiểm tra lại tài khoản/mật khẩu. Nếu quên mật khẩu, liên hệ admin để reset." },
+            { tieuDe: "Lỗi không tìm thấy đơn vị", moTa: "Mã đơn vị không tồn tại trong hệ thống. Vui lòng kiểm tra lại mã hoặc liên hệ quản trị." },
+            { tieuDe: "Lỗi sai định dạng email", moTa: "Email phải có dạng ten@domain.com. Hãy kiểm tra và thử lại." },
+            { tieuDe: "Lỗi trùng mã kho bạc", moTa: "Mã kho bạc đã được gán cho user khác. Liên hệ quản lý để kiểm tra." }
+        ];
+
+        // Khởi tạo danh sách lỗi
+        function renderLoi() {
+            const container = document.getElementById("danhSachLoi");
+            container.innerHTML = danhSachLoi.map((loi, index) => `
+                <div class="error-item" onclick="moPopup(${index})">
+                    <strong>${loi.tieuDe}</strong>
+                </div>
+            `).join('');
+        }
+
+        // Chuyển tab
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === index));
+            document.getElementById('tab1').classList.toggle('active', index === 0);
+            document.getElementById('tab2').classList.toggle('active', index === 1);
+        }
+
+        // Xử lý popup lỗi
+        function moPopup(index) {
+            const loi = danhSachLoi[index];
+            document.getElementById("popupTitle").innerText = loi.tieuDe;
+            document.getElementById("popupDesc").innerText = loi.moTa;
+            document.getElementById("popup").classList.add("active");
+        }
+        function closePopup() {
+            document.getElementById("popup").classList.remove("active");
+        }
+        document.getElementById("popup").addEventListener("click", function(e) {
+            if (e.target === this) closePopup();
+        });
+
+        // Xử lý popup Shopee
+        function moPopupShopee() {
+            // Kiểm tra form hợp lệ
+            const form = document.getElementById("requestForm");
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            // Reset trạng thái
+            document.getElementById("confirmShopeeBtn").disabled = true;
+            document.getElementById("shopeeBtn").classList.remove("clicked");
+            document.getElementById("shopeeStatus").innerHTML = "";
+            
+            document.getElementById("shopeePopup").classList.add("active");
+        }
+
+        function moShopee() {
+            // Thử mở deep link trước
+            const btn = document.getElementById("shopeeBtn");
+            const status = document.getElementById("shopeeStatus");
+            
+            btn.classList.add("clicked");
+            status.innerHTML = '<span class="success-check">✅ Đang chuyển sang Shopee...</span>';
+            
+            // Kích hoạt nút xác nhận ngay lập tức
+            document.getElementById("confirmShopeeBtn").disabled = false;
+            
+            // Thử mở app Shopee bằng deep link
+            window.location.href = SHOPEE_DEEP_LINK;
+            
+            // Fallback: nếu sau 1.5s không mở được app, chuyển sang web
+            setTimeout(() => {
+                // Nếu vẫn còn ở trang hiện tại (không chuyển app)
+                if (!document.hidden) {
+                    window.open(SHOPEE_WEB_LINK, '_blank');
+                }
+            }, 1500);
+            
+            // Đổi text nút sau khi click
+            btn.innerHTML = "✅ Đã mở Shopee";
+            setTimeout(() => {
+                btn.innerHTML = "🛍 MỞ SHOPEE NGAY";
+                btn.classList.remove("clicked");
+            }, 2000);
+        }
+
+        function xacNhanShopee() {
+            document.getElementById("shopeePopup").classList.remove("active");
+            // Gửi form thật
+            guiYeuCau();
+        }
+
+        function closeShopeePopup() {
+            document.getElementById("shopeePopup").classList.remove("active");
+        }
+
+        // Gửi yêu cầu thực sự
+        async function guiYeuCau() {
+            const submitBtn = document.querySelector("#requestForm button");
+            submitBtn.disabled = true;
+            document.getElementById("submitStatus").innerText = "Đang gửi...";
+
+            const payload = {
+                hoTen: document.getElementById("hoTen").value.trim(),
+                email: document.getElementById("email").value.trim(),
+                loaiYeuCau: document.getElementById("loaiYeuCau").value,
+                key: document.getElementById("keyInput").value.trim(),
+                giaTriCapNhat: document.getElementById("valueInput").value.trim()
+            };
+
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                
+                document.getElementById("submitStatus").innerHTML = `
+                    <span style="color: #28a745;">✅ Gửi thành công! Cảm ơn bạn đã ủng hộ ❤️</span>
+                `;
+                document.getElementById("requestForm").reset();
+                hienThiTheoLoai();
+                
+                // Reset sau 5 giây
+                setTimeout(() => {
+                    document.getElementById("submitStatus").innerHTML = "";
+                    submitBtn.disabled = false;
+                }, 5000);
+                
+            } catch (err) {
+                document.getElementById("submitStatus").innerHTML = `
+                    <span style="color: #dc3545;">❌ Lỗi kết nối! Vui lòng thử lại.</span>
+                `;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Mapping loại yêu cầu
+        const mapping = {
+            "Cập nhật loại hình đơn vị": { keyLabel: "Mã đơn vị", valueLabel: "Loại hình", keyPlaceholder: "Nhập mã đơn vị", valuePlaceholder: "Nhập loại hình mới" },
+            "Cập nhật loại đơn vị": { keyLabel: "Mã đơn vị", valueLabel: "Loại đơn vị", keyPlaceholder: "Nhập mã đơn vị", valuePlaceholder: "Nhập loại đơn vị mới" },
+            "Cập nhật tên đơn vị": { keyLabel: "Mã đơn vị", valueLabel: "Tên đơn vị", keyPlaceholder: "Nhập mã đơn vị", valuePlaceholder: "Nhập tên đơn vị mới" },
+            "Cập nhật email đơn vị": { keyLabel: "Mã đơn vị", valueLabel: "Email", keyPlaceholder: "Nhập mã đơn vị", valuePlaceholder: "Nhập email mới" },
+            "Cập nhật mã kho bạc của user": { keyLabel: "User", valueLabel: "Mã KB", keyPlaceholder: "Nhập username", valuePlaceholder: "Nhập mã kho bạc mới" }
+        };
+
+        function hienThiTheoLoai() {
+            const loai = document.getElementById("loaiYeuCau").value;
+            const labelKey = document.getElementById("labelKey");
+            const labelValue = document.getElementById("labelValue");
+            const keyInput = document.getElementById("keyInput");
+            const valueInput = document.getElementById("valueInput");
+
+            if (loai && mapping[loai]) {
+                const m = mapping[loai];
+                labelKey.innerText = m.keyLabel + " *";
+                labelValue.innerText = m.valueLabel + " *";
+                keyInput.placeholder = m.keyPlaceholder;
+                valueInput.placeholder = m.valuePlaceholder;
+                keyInput.value = "";
+                valueInput.value = "";
+            } else {
+                labelKey.innerText = "Key *";
+                labelValue.innerText = "Giá trị *";
+                keyInput.placeholder = "";
+                valueInput.placeholder = "";
+            }
+        }
+
+        // Khởi tạo
+        renderLoi();
+        hienThiTheoLoai();
+    </script>
+</body>
+</html>
